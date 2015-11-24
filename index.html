@@ -1,0 +1,87 @@
+<html>
+<head><title>OcotoClock test</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/rxjs/4.0.7/rx.all.min.js"></script>
+<link rel="stylesheet" type="text/css" href="style.css" />
+</head>
+<body>
+<link href='https://fonts.googleapis.com/css?family=Inconsolata' rel='stylesheet' type='text/css'>
+
+<div class="clock_wrapper">
+	<p class="clock_display"></p>
+	<button class="clock_ocototrigger" value="Call the Ocotonaughts">Call the Ocotonaughts</button>
+</div>
+
+<script type="text/javascript">
+	
+	var	$ = function (el) {
+			return document.querySelector(el);
+	}
+
+	var classes = {
+		clock: '.clock_display',
+		button: '.clock_ocototrigger'
+	},
+	getDate = { 
+		date: f => {
+			var pad = (num) => {
+				var s = num+"";
+				if (s.length < 2) s = "0" + s;
+				return s;
+			}
+			var d = new Date()
+			return pad(d.getHours()) + ":" + pad(d.getMinutes()) + ":" + pad(d.getSeconds())
+		}
+	},
+	clockData = { "type": "clock", "text": getDate.date()},
+	alertData = { "type": "alert", "text": "Alert!"}, 
+	clockStream = {
+		stream: new Rx.Subject(),
+		tick: f => {
+			return clockStream.stream.onNext(clockData);
+		},
+		ticketLoop: setInterval(f => { clockStream.tick(clockStream.stream) }, 1000)
+	},
+
+	buttonStream = {
+		stream: new Rx.Subject(),
+		bindMousedown: $(classes.button).addEventListener('mousedown', f => {
+		    	buttonStream.timeout = setInterval(function(){
+		         	buttonStream.stream.onNext(alertData);
+		    	}, 50);
+		    	return false;
+			}
+		),
+		bindMouseup: document.addEventListener('mouseup', f => {
+	    		clearInterval(buttonStream.timeout);
+	    		return false;
+			}
+		)
+		
+	},
+
+	ocotoStream = {
+		mergedStream: Rx.Observable.merge(buttonStream.stream,clockStream.stream)
+			.bufferWithTime(100)
+			.map(function(data) {
+				return data.reduce( (acc, streamItem) => {
+					return (acc.type == "clock" ? streamItem : acc)
+						}, clockData
+					)
+				}
+			)
+		 
+	},
+
+	init = f => {
+		ocotoStream.mergedStream.subscribe(
+			function(data) {
+				console.log(data)
+				$(classes.clock).innerHTML = data.text
+			}
+		)
+	};
+
+	init()
+	
+</script>
+</body>
