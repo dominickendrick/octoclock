@@ -32,14 +32,16 @@
     }
   },
 
-  clockData = { "type": "clock", "text": getDate.date()},
+  clockData = function() { 
+    return { "type": "clock", "text": getDate.date()} 
+  },
   
   alertData = { "type": "alert", "text": "Alert!"}, 
   
   clockStream = {
     stream: new Rx.Subject(),
     tick: f => {
-      return clockStream.stream.onNext(clockData);
+      return clockStream.stream.onNext(clockData());
     },
     ticketLoop: setInterval(f => { clockStream.tick(clockStream.stream) }, 1000)
   },
@@ -66,7 +68,7 @@
       .map(function(data) {
         return data.reduce( (acc, streamItem) => {
           return (acc.type == "clock" ? streamItem : acc)
-            }, clockData
+            }, clockData()
           )
         }
       )
@@ -75,7 +77,6 @@
   init = f => {
     ocotoStream.mergedStream.subscribe(
       function(data) {
-        console.log(data)
         $(classes.clock).innerHTML = data.text
       }
     )
